@@ -1,6 +1,6 @@
 # The script provided below is an example script. Carefully read it and consider executing it on a test enviroment first.
 # Action1 Corporation holds no liability for any damages directly or indirectly caused by running this script.
-# script is designed to generate CSV files that show what data is applicable for each endpoint in a certain group. 
+# script is designed to generate CSV files that show what data is applicable for each endpoint in a certain group. This script as built is designed to work with the Missing Third-Party & Windows Updates and to only Show endpoint name and Update Name - This can be edited below
 
 # PSAction1 PowerShell Script for Group Report Analysis
 # Comment out below import/set-action1credentials if not needed, or preformed prior
@@ -30,7 +30,7 @@ foreach ($group in $endpointGroups) {
     $filteredReportData = foreach ($data in $reportData) {
         $endpointName = $data.fields.'Endpoint Name'
         if ($currentGroupEndpoints.name -contains $endpointName) {
-            # Create custom object for each record that matches the group
+            # Create custom object for each record that matches the group - Note can be adjusted to show different report fields to work with different reports
             [PSCustomObject]@{
                 EndpointName = $endpointName
                 UpdateName   = $data.fields.'Update Name'
