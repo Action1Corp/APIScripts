@@ -1,6 +1,21 @@
-# The script provided below is an example script. Carefully read it and consider executing it on a test enviroment first.
-# Action1 Corporation holds no liability for any damages directly or indirectly caused by running this script.
-# script is designed to generate CSV files that show what data is applicable for each endpoint in a certain group. This script as built is designed to work with the Missing Third-Party & Windows Updates and to only Show endpoint name and Update Name - This can be edited below
+﻿# Name: PSAction1ReportByGroup.ps1
+# Description: script is designed to generate CSV files that show what data is applicable for each endpoint in a certain group. This script as built is designed to work with the Missing Third-Party & Windows Updates and to only Show endpoint name and Update Name - This can be edited below
+# Copyright (C) 2024 Action1 Corporation
+# Documentation: https://github.com/Action1Corp/PSAction1/
+# Use Action1 Roadmap system (https://roadmap.action1.com/) to submit feedback or enhancement requests.
+
+# WARNING: Carefully study the provided scripts and components before using them. Test in your non-production lab first.
+
+# LIMITATION OF LIABILITY. IN NO EVENT SHALL ACTION1 OR ITS SUPPLIERS, OR THEIR RESPECTIVE 
+# OFFICERS, DIRECTORS, EMPLOYEES, OR AGENTS BE LIABLE WITH RESPECT TO THE WEBSITE OR
+# THE COMPONENTS OR THE SERVICES UNDER ANY CONTRACT, NEGLIGENCE, TORT, STRICT 
+# LIABILITY OR OTHER LEGAL OR EQUITABLE THEORY (I)FOR ANY AMOUNT IN THE AGGREGATE IN
+# EXCESS OF THE GREATER OF FEES PAID BY YOU THEREFOR OR $100; (II) FOR ANY INDIRECT,
+# INCIDENTAL, PUNITIVE, OR CONSEQUENTIAL DAMAGES OF ANY KIND WHATSOEVER; (III) FOR
+# DATA LOSS OR COST OF PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; OR (IV) FOR ANY
+# MATTER BEYOND ACTION1’S REASONABLE CONTROL. SOME STATES DO NOT ALLOW THE
+# EXCLUSION OR LIMITATION OF INCIDENTAL OR CONSEQUENTIAL DAMAGES, SO THE ABOVE
+# LIMITATIONS AND EXCLUSIONS MAY NOT APPLY TO YOU.
 
 # PSAction1 PowerShell Script for Group Report Analysis
 # Comment out below import/set-action1credentials if not needed, or preformed prior
