@@ -22,7 +22,7 @@ Install-Module -Name PSAction1
 Set-Action1Credentials -APIKey '<your api key>' -Secret '<your secret>'
 Set-Action1DefaultOrg -Org_ID '<your org id>'
 
-$Exportpath = "<InsertFilePathHere.csv"
+$Exportpath = "<InsertFilePathHere.csv>"
 
 # Initialize other variables
 $groupEndpointMapping = @{}
