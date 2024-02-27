@@ -58,12 +58,12 @@ foreach ($currentMember in $currentGroupMembers) {
 
 # Update the group with new members
 if ($dataAdd) {
-    Update-Action1 ModifyMembers -type EndpointGroup -Id $groupId -Data @($dataAdd)
+    Update-Action1 ModifyMembers EndpointGroup -Id $groupId -Data @($dataAdd)
 }
 
 # Remove members not found in the report from the group
 if ($dataRemove) {
     foreach ($memberToRemove in $dataRemove) {
-        Update-Action1 ModifyMembers -type EndpointGroup -Id $groupId -Data @($memberToRemove)
+        Update-Action1 ModifyMembers EndpointGroup -Id $groupId -Data @($memberToRemove)
     }
 }
