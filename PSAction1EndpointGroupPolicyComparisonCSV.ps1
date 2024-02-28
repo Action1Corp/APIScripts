@@ -1,5 +1,5 @@
 # Name: PSAction1EndpointGroupPolicyComparisonCSV.ps1
-# Description: script is designed to generate CSV that shows what endpoints and groups are assisgned to automations
+# Description: script is designed to generate CSV that shows what endpoints and groups are assigned to automations
 # Copyright (C) 2024 Action1 Corporation
 # Documentation: https://github.com/Action1Corp/PSAction1/
 # Use Action1 Roadmap system (https://roadmap.action1.com/) to submit feedback or enhancement requests.
