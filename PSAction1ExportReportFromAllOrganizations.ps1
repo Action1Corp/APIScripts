@@ -19,10 +19,10 @@
 # LIMITATIONS AND EXCLUSIONS MAY NOT APPLY TO YOU.
 
 # Comment out below import/set-action1credentials if not needed, or preformed prior
-# Install-Module -Name PSAction1
-# Set-Action1Credentials -APIKey '<your api key>' -Secret '<your secret>'
-# Set-Action1DefaultOrg -Org_ID '<your org id>'
-# Set-Action1Region -Region '<Enter Region Here>'
+Install-Module -Name PSAction1
+Set-Action1Credentials -APIKey '<your api key>' -Secret '<your secret>'
+Set-Action1DefaultOrg -Org_ID '<your org id>'
+Set-Action1Region -Region '<Enter Region Here>'
 
 # Set Directory for CSV Export - Please note area below that completes the directory
 $csvFileDirectory = "Insert Directory Here - Example: C:\test"
