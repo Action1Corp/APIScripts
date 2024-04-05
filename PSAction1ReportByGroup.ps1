@@ -19,10 +19,10 @@
 
 # PSAction1 PowerShell Script for Group Report Analysis
 # Comment out below import/set-action1credentials if not needed, or preformed prior
-# Install-Module -Name PSAction1
-# Set-Action1Credentials -APIKey '<your api key>' -Secret '<your secret>'
-# Set-Action1DefaultOrg -Org_ID '<your org id>'
-# Set-Action1Region -Region '<Enter Region Here>'
+Install-Module -Name PSAction1
+Set-Action1Credentials -APIKey '<your api key>' -Secret '<your secret>'
+Set-Action1DefaultOrg -Org_ID '<your org id>'
+Set-Action1Region -Region '<Enter Region Here>'
 
 $csvFileDirectory = "<Insert Directory Here>"
 $reportData = Get-Action1 ReportData -Id "<Insert Report ID Here>"  #Please create report by cloning report and turning into simple report that sorts by endpoint
