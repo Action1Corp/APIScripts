@@ -18,10 +18,10 @@
 # LIMITATIONS AND EXCLUSIONS MAY NOT APPLY TO YOU.
 
 # Comment out below import/set-action1credentials if not needed, or preformed prior
-# Install-Module -Name PSAction1
-# Set-Action1Credentials -APIKey '<your api key>' -Secret '<your secret>'
-# Set-Action1DefaultOrg -Org_ID '<your org id>'
-# Set-Action1Region -Region '<Enter Region Here>'
+Install-Module -Name PSAction1
+Set-Action1Credentials -APIKey '<your api key>' -Secret '<your secret>'
+Set-Action1DefaultOrg -Org_ID '<your org id>'
+Set-Action1Region -Region '<Enter Region Here>'
 
 $GroupExportpath = "<InsertFilePathHere.csv>"
 $EndpointExportpath = "<InsertFilePathHere.csv>"
