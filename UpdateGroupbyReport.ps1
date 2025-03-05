@@ -39,7 +39,7 @@ $group.ClearIncludeFilter()
 $group.ClearExcludeFilter()
 
 $reportEndpointNames | ForEach-Object{
-    $group.AddIncludeFilter('id',$($Endpoints[$_]))
+    $group.AddIncludeFilter('name',$_)
 }
 
 Update-Action1 Modify EndpointGroup -Id $groupID -Data $group
