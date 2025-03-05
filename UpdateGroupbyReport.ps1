@@ -1,4 +1,4 @@
-# Name: PSAction1UpdateGroupbyReport.ps1
+# Name: UpdateGroupbyReport.ps1
 # Description: Script is designed to compare report endpoint information and update group based on what endpoints are found (or not found) in a report.  
 # NOTE BEFORE RUNNING:  You will need to create a report in "Simple Report" in Action1 via Custom Reports that has Endpoint names as the primary sorting function.
 # Copyright (C) 2024 Action1 Corporation
@@ -24,14 +24,9 @@ Set-Action1Credentials -APIKey '<Insert API Key Here>' -Secret '<Insert Secret H
 Set-Action1DefaultOrg -Org_ID '<Insert Org_ID here>'
 Set-Action1Region -Region '<Enter Region Here>'
 
-# Initialize the data array for Update-Action1 command
-$dataAdd = @()
-$dataRemove = @()
-
 # Fetch report data and extract endpoint IDs/names
 $reportId = '<Insert Report ID Here>'
-$reportData = Get-Action1 ReportData -Id $reportId
-$reportEndpointNames = $reportData | ForEach-Object { $_.fields.'Endpoint Name' }
+$reportEndpointNames = Get-Action1 ReportData -Id $reportId | ForEach-Object { $_.fields.'Endpoint Name' }
 
 # Dictionary for Name/ID lookup.
 $Endpoints = @{}
@@ -39,32 +34,12 @@ Get-Action1 Endpoints | ForEach-Object {$Endpoints[$_.name] = $_.id}
 
 # Fetch current members of the group
 $groupId = '<Insert Group ID Here>' # Adjust to the correct group ID
-$currentGroupMembers = Get-Action1 EndpointGroupMembers -Id $groupId | ForEach-Object { $_.name }
+$group = Get-Action1 Settings -For EndpointGroup -Clone $groupId
+$group.ClearIncludeFilter()
+$group.ClearExcludeFilter()
 
-# Prepare data for adding new members
-foreach ($EndpointName in $reportEndpointNames) {
-    if ($EndpointName -in $currentGroupMembers) {
-        # If the endpoint is already in the group, no need to add it again
-        continue
-    }
-    $dataAdd += (Get-Action1 Settings -For GroupAddEndpoint)::new().splat($Endpoints[$EndpointName])
+$reportEndpointNames | ForEach-Object{
+    $group.AddIncludeFilter('id',$($Endpoints[$_]))
 }
 
-# Prepare data for removing members not found in the report
-foreach ($currentMember in $currentGroupMembers) {
-    if ($currentMember -notin $reportEndpointNames) {
-        $dataRemove += (Get-Action1 Settings -For GroupDeleteEndpoint)::new().splat($Endpoints[$currentMember])
-    }
-}
-
-# Update the group with new members
-if ($dataAdd) {
-    Update-Action1 ModifyMembers EndpointGroup -Id $groupId -Data @($dataAdd)
-}
-
-# Remove members not found in the report from the group
-if ($dataRemove) {
-    foreach ($memberToRemove in $dataRemove) {
-        Update-Action1 ModifyMembers EndpointGroup -Id $groupId -Data @($memberToRemove)
-    }
-}
+Update-Action1 Modify EndpointGroup -Id $groupID -Data $group
