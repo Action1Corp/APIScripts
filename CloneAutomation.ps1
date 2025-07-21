@@ -56,6 +56,14 @@ Write-Host "Selected Automation for Cloning: $($selectedAutomation.name) with ID
 $AutomationID = $selectedAutomation.id
 $clonedAutomation = Get-Action1 Settings -For Automation -Clone $AutomationID
 
+$name = Read-Host "Enter new name for this automaiton, leave blank to keep existing name."
+
+if (![string]::IsNullOrWhiteSpace($name)) {
+     $clonedAutomation.name = $name
+} else {
+    Write-Host "No alternate name was provided, nothing was changed."
+}
+
 # Step 3: Select Target Organizations for Cloning
 $orgData = Get-Action1 Organizations
 for ($i = 0; $i -lt $orgData.Count; $i++) {
