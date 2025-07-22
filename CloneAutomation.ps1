@@ -56,7 +56,7 @@ Write-Host "Selected Automation for Cloning: $($selectedAutomation.name) with ID
 $AutomationID = $selectedAutomation.id
 $clonedAutomation = Get-Action1 Settings -For Automation -Clone $AutomationID
 
-$name = Read-Host "Enter new name for this automaiton, leave blank to keep existing name."
+$name = Read-Host "Enter new name for this automation, leave blank to keep existing name."
 
 if (![string]::IsNullOrWhiteSpace($name)) {
      $clonedAutomation.name = $name
@@ -119,9 +119,11 @@ foreach ($targetOrg in $targetOrgs) {
         for ($i = 0; $i -lt $groupData.Count; $i++) {
             Write-Host "$($i + 1): $($groupData[$i].name)"
         }
-        $groupSelection = Read-Host "Enter the number of the group you want to add to the automation in $($targetOrg.name), or enter 'All' for all Endpoints"
+        $groupSelection = Read-Host "Enter the number of the group you want to add to the automation in $($targetOrg.name), or enter 'All' for all Endpoints,'Empty' for none."
         if ($groupSelection -eq "All") {
             $selectedGroups = @(@{id="ALL"; type="EndpointGroup"})
+        } elseif ($userChoice -eq "Empty") {
+            Write-Host "Proceeding without specifying groups."
         } else {
             $groupIndices = $groupSelection -split ','
             foreach ($index in $groupIndices) {
