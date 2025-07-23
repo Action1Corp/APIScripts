@@ -2,7 +2,7 @@
 # Description: Script creates new organizations in Action1 using a list of client names from a CSV file.
 #              Skips existing orgs. Fallback to hardcoded list is disabled by default.
 #              Please Refresh Console after Orgs have been created.
-#              API Account must have Manage Organization rights to create orgs - Following least least privilege access please make an account with only #              these rights to run this script
+#              API Account must have Manage Organization rights to create orgs - Following least least privilege access please make an account with only these rights to run this script
 # Copyright (C) 2024 Action1 Corporation
 # Documentation: https://github.com/Action1Corp/PSAction1/
 # Use Action1 Roadmap system (https://roadmap.action1.com/) to submit feedback or enhancement requests.
