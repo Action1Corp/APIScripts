@@ -122,7 +122,7 @@ foreach ($targetOrg in $targetOrgs) {
         $groupSelection = Read-Host "Enter the number of the group you want to add to the automation in $($targetOrg.name), or enter 'All' for all Endpoints,'Empty' for none."
         if ($groupSelection -eq "All") {
             $selectedGroups = @(@{id="ALL"; type="EndpointGroup"})
-        } elseif ($userChoice -eq "Empty") {
+        } elseif ($selectedGroups -eq "Empty") {
             Write-Host "Proceeding without specifying groups."
         } else {
             $groupIndices = $groupSelection -split ','
