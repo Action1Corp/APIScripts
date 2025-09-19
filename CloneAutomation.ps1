@@ -138,7 +138,8 @@ foreach ($targetOrg in $targetOrgs) {
 
     $newAutomationID = $clonedAutomations[$targetOrg.id]
     $clonedAutomation.endpoints = $selectedGroups
-
+    $clonedAutomation.PSObject.Properties.Remove('actions')
     Update-Action1 Modify -Type Automation -Id $newAutomationID -Data $clonedAutomation
     Write-Host "Updated Cloned Automation in $($targetOrg.name) with selected endpoints/groups."
 }
+
