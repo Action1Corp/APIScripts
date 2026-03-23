@@ -23,42 +23,211 @@ Set-Action1Credentials -APIKey '<Insert API Key Here>' -Secret '<Insert Secret H
 Set-Action1DefaultOrg -Org_ID '<Insert Org_ID here>'
 Set-Action1Region -Region '<Enter Region Here>'
 
-$endpointsToCheck = @{} # Hash table
-$duplicatedObjects = New-Object System.Collections.ArrayList # Initialize as an ArrayList
+try {
+    Write-Host "[INFO] Starting endpoint processing..."
 
-$endpoints = Get-Action1 Endpoints
-$endpoints | ForEach-Object {
-    # Parse object time to true datetime.
-    $TimeParsed = $_.last_seen -split '_'
-    $TimeParsed = [datetime]([string]::Format("{0} {1}", $TimeParsed[0], $TimeParsed[1].Replace('-',':')))
-    if ($endpointsToCheck.ContainsKey($_.mac)) {
-        # This MAC has been seen, determine who the stale one is based on timestamp.
-        if ($TimeParsed -gt $endpointsToCheck[$_.mac]['last_seen']) {
-            # Evaluated duplicate is newer, add previous comparator value to the remove array.
-            $null = $duplicatedObjects.Add($endpointsToCheck[$_.mac])
-            # Remove previous comparator from the check hash table.
-            $endpointsToCheck.Remove($_.mac)
-            # Add this new instance as the new comparator.
-            $endpointsToCheck.Add($_.mac, @{id=$_.id; name=$_.name; mac=$_.mac; serial=$_.serial; last_seen=$TimeParsed})
-        } else {
-            # This is a duplicate and older than the previous found.
-            $null = $duplicatedObjects.Add(@{id=$_.id; name=$_.name; mac=$_.mac; serial=$_.serial; last_seen=$TimeParsed})
+    if (-not $endpointsToCheck) {
+        Write-Host "[WARN] endpointsToCheck was null. Initializing..."
+        $endpointsToCheck = @{}
+    }
+
+    if (-not $duplicatedEndpoints) {
+        Write-Host "[WARN] duplicatedEndpoints was null. Initializing..."
+        $duplicatedEndpoints = New-Object -TypeName System.Collections.ArrayList
+    }
+
+    $endpoints = Get-Action1 -Query Endpoints
+
+    if (-not $endpoints) {
+        throw "[ERROR] No any endpoints returned"
+    }
+
+    $endpoints | ForEach-Object {
+        try {
+            $currentEndpoint = $_
+            if (-not $currentEndpoint) {
+                Write-Host "[WARN] Skipping null endpoint object" -ForegroundColor Yellow
+                continue
+            }
+            
+            $macKey = $currentEndpoint.mac
+            if (-not $macKey) {
+                Write-Host "[WARN] Skipping object due to missing MAC for Endpoint: $($currentEndpoint.Id)" -ForegroundColor Yellow
+                continue
+            }
+            
+            $last_seen = $currentEndpoint.last_seen
+            if (-not $last_seen) {
+                Write-Host "[WARN] Skipping object due to missing last_seen for Endpoint: $($currentEndpoint.Id)" -ForegroundColor Yellow
+                continue
+            }
+            
+            $TimeParsed = $null
+            try {
+                $parts = $last_seen -split '_'
+
+                if ($parts.Count -lt 2) {
+                    throw "Invalid last_seen format for Endpoint: $($currentEndpoint.Id) "
+                }
+
+                $datePart = $parts[0]
+                $timePart = $parts[1] -replace '-', ':'
+
+                $dateString = "$datePart $timePart"
+
+                if (-not [datetime]::TryParse($dateString, [ref]$TimeParsed)) {
+                    throw "Failed to parse datetime: $dateString"
+                }
+            }
+            catch {
+                Write-Host "[ERROR] last_seen Date parsing failed for Endpoint: $($currentEndpoint.Id)"
+                continue
+            }
+
+            # Ensure MAC key is valid
+            if ([string]::IsNullOrWhiteSpace($macKey)) {
+                Write-Host "[WARN] Empty MAC detected, skipping Endpoint $($currentEndpoint.Id) processing." -ForegroundColor Yellow
+                continue
+            }
+
+            if ($endpointsToCheck.ContainsKey($macKey)) {
+
+                $existing = $endpointsToCheck[$macKey]
+                    
+                if (-not $existing -or -not ($existing['last_seen'] -is [datetime])){
+                    Write-Host "[WARN] Existing record invalid for MAC $macKey, overwriting..."
+                    $endpointsToCheck[$macKey] = @{
+                        id        = $currentEndpoint.id
+                        name      = $currentEndpoint.name
+                        mac       = $currentEndpoint.mac
+                        serial    = $currentEndpoint.serial
+                        last_seen = $TimeParsed
+                    }
+                    continue
+                }
+
+                if ($TimeParsed -gt $existing['last_seen']) {
+                    # Newer object found
+                    [void]$duplicatedEndpoints.Add($existing)
+
+                    $endpointsToCheck[$macKey] = @{
+                        id        = $currentEndpoint.id
+                        name      = $currentEndpoint.name
+                        mac       = $currentEndpoint.mac
+                        serial    = $currentEndpoint.serial
+                        last_seen = $TimeParsed
+                    }
+
+                    Write-Host "[INFO] Updated newer endpoint for MAC $macKey"
+                }
+                else {
+                    # Older duplicate
+                    [void]$duplicatedEndpoints.Add(@{
+                        id        = $currentEndpoint.id
+                        name      = $currentEndpoint.name
+                        mac       = $currentEndpoint.mac
+                        serial    = $currentEndpoint.serial
+                        last_seen = $TimeParsed
+                    })
+
+                    Write-Host "[INFO] Found older duplicate for MAC $macKey"
+                }
+            }
+            else {
+                # Add new MAC entry
+                $endpointsToCheck[$macKey] = @{
+                    id        = $currentEndpoint.id
+                    name      = $currentEndpoint.name
+                    mac       = $currentEndpoint.mac
+                    serial    = $currentEndpoint.serial
+                    last_seen = $TimeParsed
+                }
+
+                Write-Host "[INFO] Added new endpoint for MAC $macKey"
+            }
         }
-    } else {
-        # This MAC is not present, add it as comparator.
-        $endpointsToCheck.Add($_.mac, @{id=$_.id; name=$_.name; mac=$_.mac; serial=$_.serial; last_seen=$TimeParsed})
+        catch {
+            Write-Host "[ERROR] Failed processing Endpoint: $($currentEndpoint.Id).  Error: $($_.Exception.Message)" -ForegroundColor Red
+        }
+    }
+    Write-Host "[INFO] Endpoints processing is complete. Total duplicates found: $($duplicatedEndpoints.Count)" -ForegroundColor Green
+}
+catch {
+    Write-Host "[FATAL] Script execution failed: $_" -ForegroundColor Red
+}
+
+if ($duplicatedEndpoints.Count -lt 1){
+    throw "No duplicated Endpoints to delete found. Script execution completed"
+}
+
+$endpointsToDelete = New-Object System.Collections.ArrayList
+
+Write-Host "`n[INFO] Duplicate endpoints detected:" -ForegroundColor Cyan
+$duplicatedEndpoints | Format-Table id, name, mac, last_seen -AutoSize
+
+$applyToAll = $false
+
+foreach ($endpoint in $duplicatedEndpoints) {
+
+    if (-not $endpoint) { continue }
+
+    $endpointId = $endpoint.id
+    if (-not $endpointId) { continue }
+
+    Write-Host "`n----------------------------------------" -ForegroundColor DarkGray
+    Write-Host "ID        : $($endpoint.id)"
+    Write-Host "Name      : $($endpoint.name)"
+    Write-Host "MAC       : $($endpoint.mac)"
+    Write-Host "Last Seen : $($endpoint.last_seen)"
+    Write-Host "----------------------------------------" -ForegroundColor DarkGray
+
+    if (-not $applyToAll) {
+        $userInput = Read-Host "Delete this endpoint? (A=Yes to All, Y=Yes, N=No, Enter=Yes)"
+    }
+    else {
+        $userInput = 'y'
+    }
+
+    # Default to Yes if Enter pressed
+    if ([string]::IsNullOrWhiteSpace($userInput)) { $userInput = 'y' }
+
+    switch ($userInput.ToLower()) {
+        'a' {
+            $applyToAll = $true
+            Write-Host "[INFO] 'Yes to All' selected. All remaining endpoints will be deleted." -ForegroundColor Cyan
+            $userInput = 'y'
+        }
+        'y' {
+            $null = $endpointsToDelete.Add($endpoint)
+            Write-Host "[INFO] Marked endpoint ID $endpointId for deletion" -ForegroundColor Yellow
+        }
+        'n' {
+            Write-Host "[INFO] Skipped endpoint ID $endpointId" -ForegroundColor Gray
+        }
+        default {
+            Write-Host "[WARN] Invalid input '$userInput' → defaulting to YES" -ForegroundColor Yellow
+            $null = $endpointsToDelete.Add($endpoint)
+        }
     }
 }
 
-# Convert $duplicatedObjects ArrayList into custom objects for better readability and further processing
-$customDuplicatedObjects = $duplicatedObjects | ForEach-Object {
-    New-Object  -TypeName psobject -Property $_
+#Processing safe force delete
+Write-Host "`n[INFO] Processing deletion of $($endpointsToDelete.Count) endpoints..." -ForegroundColor Cyan
+
+foreach ($endpoint in $endpointsToDelete) {
+    $endpointId = $endpoint.id
+
+    try {
+        Write-Host "[INFO] Deleting endpoint with ID: $endpointId" -ForegroundColor Yellow
+        
+        #No confirmation here because of explicit confirmation above.
+        Update-Action1 -Action 'Delete' -Type 'Endpoint' -Id $endpointId -Force
+
+        Write-Host "[SUCCESS] Deleted endpoint with ID: $endpointId" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "[ERROR] Failed to delete endpoint ID: $endpointId | Error: $($_.Exception.Message)" -ForegroundColor Red
+    }
 }
 
-# Delete the duplicate endpoints
-$customDuplicatedObjects | Out-GridView -Title "Duplicate Endpoints" -PassThru | ForEach-Object {
-    $endpointId = $_.id
-    Write-Host "Deleting endpoint with ID: $endpointId" -ForegroundColor Yellow
-    Update-Action1 -Action 'Delete' -Type 'Endpoint' -Id $endpointId #-force #- Uncomment -force to skip prompt "Are you sure you want to Delete Endpoint"
-}
-
+Write-Host "[INFO] Duplicated Endpoints deleting is complete. Total duplicates removed: $($endpointsToDelete.Count)" -ForegroundColor Green
