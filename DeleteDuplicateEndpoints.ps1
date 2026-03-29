@@ -25,16 +25,9 @@ Set-Action1Region -Region '<Enter Region Here>'
 
 try {
     Write-Host "[INFO] Starting endpoint processing..."
-
-    if (-not $endpointsToCheck) {
-        Write-Host "[WARN] endpointsToCheck was null. Initializing..."
-        $endpointsToCheck = @{}
-    }
-
-    if (-not $duplicatedEndpoints) {
-        Write-Host "[WARN] duplicatedEndpoints was null. Initializing..."
-        $duplicatedEndpoints = New-Object -TypeName System.Collections.ArrayList
-    }
+    
+    $endpointsToCheck = @{}
+    $duplicatedEndpoints = New-Object -TypeName System.Collections.ArrayList
 
     $endpoints = Get-Action1 -Query Endpoints
 
@@ -61,13 +54,13 @@ try {
                 Write-Host "[WARN] Skipping object due to missing last_seen for Endpoint: $($currentEndpoint.Id)" -ForegroundColor Yellow
                 continue
             }
-            
-            $TimeParsed = $null
+
             try {
+
                 $parts = $last_seen -split '_'
 
                 if ($parts.Count -lt 2) {
-                    throw "Invalid last_seen format for Endpoint: $($currentEndpoint.Id) "
+                    throw "Invalid last_seen format for Endpoint: $($currentEndpoint.Id)"
                 }
 
                 $datePart = $parts[0]
@@ -75,7 +68,11 @@ try {
 
                 $dateString = "$datePart $timePart"
 
-                if (-not [datetime]::TryParse($dateString, [ref]$TimeParsed)) {
+                $TimeParsed = [datetime]::MinValue
+
+                $format = 'yyyy-MM-dd HH:mm:ss'
+
+                if (-not [datetime]::TryParseExact($dateString, $format, $null, [System.Globalization.DateTimeStyles]::None, [ref]$TimeParsed)) {
                     throw "Failed to parse datetime: $dateString"
                 }
             }
@@ -108,7 +105,7 @@ try {
 
                 if ($TimeParsed -gt $existing['last_seen']) {
                     # Newer object found
-                    [void]$duplicatedEndpoints.Add($existing)
+                    [void]$duplicatedEndpoints.Add([PSCustomObject]$existing)
 
                     $endpointsToCheck[$macKey] = @{
                         id        = $currentEndpoint.id
@@ -122,7 +119,7 @@ try {
                 }
                 else {
                     # Older duplicate
-                    [void]$duplicatedEndpoints.Add(@{
+                    [void]$duplicatedEndpoints.Add([PSCustomObject]@{
                         id        = $currentEndpoint.id
                         name      = $currentEndpoint.name
                         mac       = $currentEndpoint.mac
@@ -156,78 +153,92 @@ catch {
     Write-Host "[FATAL] Script execution failed: $_" -ForegroundColor Red
 }
 
-if ($duplicatedEndpoints.Count -lt 1){
-    throw "No duplicated Endpoints to delete found. Script execution completed"
-}
+if ($duplicatedEndpoints.Count -ge 1){
 
-$endpointsToDelete = New-Object System.Collections.ArrayList
+    $endpointsToDelete = New-Object System.Collections.ArrayList
 
-Write-Host "`n[INFO] Duplicate endpoints detected:" -ForegroundColor Cyan
-$duplicatedEndpoints | Format-Table id, name, mac, last_seen -AutoSize
+    Write-Host "`n[INFO] The following $($duplicatedEndpoints.Count) duplicated endpoints detected:" -ForegroundColor Cyan
+    $duplicatedEndpoints | Format-Table id, name, mac, last_seen -AutoSize
 
-$applyToAll = $false
+    $applyToAll = $false
 
-foreach ($endpoint in $duplicatedEndpoints) {
+    foreach ($endpoint in $duplicatedEndpoints) {
 
-    if (-not $endpoint) { continue }
+        if (-not $endpoint) { continue }
 
-    $endpointId = $endpoint.id
-    if (-not $endpointId) { continue }
+        $endpointId = $endpoint.id
+        if (-not $endpointId) { continue }
 
-    Write-Host "`n----------------------------------------" -ForegroundColor DarkGray
-    Write-Host "ID        : $($endpoint.id)"
-    Write-Host "Name      : $($endpoint.name)"
-    Write-Host "MAC       : $($endpoint.mac)"
-    Write-Host "Last Seen : $($endpoint.last_seen)"
-    Write-Host "----------------------------------------" -ForegroundColor DarkGray
+        Write-Host "`nEndpoint--------------------------------------------------" -ForegroundColor DarkGray
+        Write-Host "ID        : $($endpoint.id)"
+        Write-Host "Name      : $($endpoint.name)"
+        Write-Host "MAC       : $($endpoint.mac)"
+        Write-Host "Last Seen : $($endpoint.last_seen)"
+        Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
 
-    if (-not $applyToAll) {
-        $userInput = Read-Host "Delete this endpoint? (A=Yes to All, Y=Yes, N=No, Enter=Yes)"
-    }
-    else {
-        $userInput = 'y'
-    }
-
-    # Default to Yes if Enter pressed
-    if ([string]::IsNullOrWhiteSpace($userInput)) { $userInput = 'y' }
-
-    switch ($userInput.ToLower()) {
-        'a' {
-            $applyToAll = $true
-            Write-Host "[INFO] 'Yes to All' selected. All remaining endpoints will be deleted." -ForegroundColor Cyan
+        if (-not $applyToAll) {
+            $userInput = Read-Host "Delete this endpoint? (A=Yes to All, Y=Yes, N=No, Enter=Yes)"
+        }
+        else {
             $userInput = 'y'
         }
-        'y' {
-            $null = $endpointsToDelete.Add($endpoint)
-            Write-Host "[INFO] Marked endpoint ID $endpointId for deletion" -ForegroundColor Yellow
-        }
-        'n' {
-            Write-Host "[INFO] Skipped endpoint ID $endpointId" -ForegroundColor Gray
-        }
-        default {
-            Write-Host "[WARN] Invalid input '$userInput' → defaulting to YES" -ForegroundColor Yellow
-            $null = $endpointsToDelete.Add($endpoint)
+
+        # Default to Yes if Enter pressed
+        if ([string]::IsNullOrWhiteSpace($userInput)) { $userInput = 'y' }
+
+        switch ($userInput.ToLower()) {
+            'a' {
+                $applyToAll = $true
+                Write-Host "[INFO] 'Yes to All' selected. All remaining endpoints will be deleted." -ForegroundColor Cyan
+                $null = $endpointsToDelete.Add($endpoint)
+                Write-Host "[INFO] Marked endpoint ID $endpointId for deletion" -ForegroundColor Yellow
+            }
+            'y' {
+                $null = $endpointsToDelete.Add($endpoint)
+                Write-Host "[INFO] Marked endpoint ID $endpointId for deletion" -ForegroundColor Yellow
+            }
+            'n' {
+                Write-Host "[INFO] Skipped endpoint ID $endpointId" -ForegroundColor Gray
+            }
+            default {
+                Write-Host "[WARN] Invalid input '$userInput' → defaulting to YES" -ForegroundColor Yellow
+                $null = $endpointsToDelete.Add($endpoint)
+            }
         }
     }
-}
 
-#Processing safe force delete
-Write-Host "`n[INFO] Processing deletion of $($endpointsToDelete.Count) endpoints..." -ForegroundColor Cyan
 
-foreach ($endpoint in $endpointsToDelete) {
-    $endpointId = $endpoint.id
+    if ($null -ne $endpointsToDelete -and $endpointsToDelete.Count -ge 1){
+        #Processing safe force delete
+        Write-Host "`n[INFO] Processing deletion of $($endpointsToDelete.Count) endpoints..." -ForegroundColor Cyan
 
-    try {
-        Write-Host "[INFO] Deleting endpoint with ID: $endpointId" -ForegroundColor Yellow
+        foreach ($endpoint in $endpointsToDelete) {
+            $endpointId = $endpoint.id
+
+            try {
+                Write-Host "[INFO] Deleting endpoint with ID: $endpointId" -ForegroundColor Yellow
         
-        #No confirmation here because of explicit confirmation above.
-        Update-Action1 -Action 'Delete' -Type 'Endpoint' -Id $endpointId -Force
+                #No confirmation here because of explicit confirmation above.
+                $deleteResponse = Update-Action1 -Action 'Delete' -Type 'Endpoint' -Id $endpointId -Force
 
-        Write-Host "[SUCCESS] Deleted endpoint with ID: $endpointId" -ForegroundColor Green
+                if($null -ne $deleteResponse){
+                    Write-Host "[SUCCESS] Deleted endpoint with ID: $endpointId" -ForegroundColor Green
+                }
+                else{
+                    Write-Host "[WARN] No response returned while deleting endpoint with ID: $endpointId" -ForegroundColor DarkYellow
+                }
+            }
+            catch {
+                Write-Host "[ERROR] Failed to delete endpoint ID: $endpointId | Error: $($_.Exception.Message)" -ForegroundColor Red
+            }
+        }
+
+        Write-Host "[INFO] Duplicated Endpoints deleting is complete. Total duplicates removed: $($endpointsToDelete.Count)" -ForegroundColor Green
     }
-    catch {
-        Write-Host "[ERROR] Failed to delete endpoint ID: $endpointId | Error: $($_.Exception.Message)" -ForegroundColor Red
+    else{
+        Write-Host "[INFO] No duplicated endpoints of $($duplicatedEndpoints.Count) found were selected to delete. Script execution completed." -ForegroundColor Green   
     }
 }
-
-Write-Host "[INFO] Duplicated Endpoints deleting is complete. Total duplicates removed: $($endpointsToDelete.Count)" -ForegroundColor Green
+else{
+    Write-Host "[INFO] No any duplicated Endpoints found. Script execution completed" -ForegroundColor Yellow
+}
