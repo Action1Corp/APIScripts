@@ -87,61 +87,53 @@ try {
                 continue
             }
 
+            $currentEndpointObject = [PSCustomObject]@{
+                id        = $currentEndpoint.id
+                name      = $currentEndpoint.name
+                mac       = $currentEndpoint.mac
+                serial    = $currentEndpoint.serial
+                last_seen = $TimeParsed
+            }
+
             if ($endpointsToCheck.ContainsKey($macKey)) {
 
                 $existing = $endpointsToCheck[$macKey]
-                    
-                if (-not $existing -or -not ($existing['last_seen'] -is [datetime])){
+
+                if (-not $existing -or -not ($existing.last_seen -is [datetime])) {
                     Write-Host "[WARN] Existing record invalid for MAC $macKey, overwriting..."
-                    $endpointsToCheck[$macKey] = @{
-                        id        = $currentEndpoint.id
-                        name      = $currentEndpoint.name
-                        mac       = $currentEndpoint.mac
-                        serial    = $currentEndpoint.serial
-                        last_seen = $TimeParsed
-                    }
+                    $endpointsToCheck[$macKey] = $currentEndpointObject
                     continue
                 }
 
-                if ($TimeParsed -gt $existing['last_seen']) {
-                    # Newer object found
-                    [void]$duplicatedEndpoints.Add([PSCustomObject]$existing)
+                # Newer object found
+                if ($TimeParsed -gt $existing.last_seen) {
 
-                    $endpointsToCheck[$macKey] = @{
-                        id        = $currentEndpoint.id
-                        name      = $currentEndpoint.name
-                        mac       = $currentEndpoint.mac
-                        serial    = $currentEndpoint.serial
-                        last_seen = $TimeParsed
+                    try {
+                        [void]$duplicatedEndpoints.Add($existing)
+                    } catch {
+                        Write-Host "[ERROR] Failed adding existing duplicate for MAC $macKey : $_"
                     }
 
+                    $endpointsToCheck[$macKey] = $currentEndpointObject
                     Write-Host "[INFO] Updated newer endpoint for MAC $macKey"
                 }
+                # Older duplicate found
                 else {
-                    # Older duplicate
-                    [void]$duplicatedEndpoints.Add([PSCustomObject]@{
-                        id        = $currentEndpoint.id
-                        name      = $currentEndpoint.name
-                        mac       = $currentEndpoint.mac
-                        serial    = $currentEndpoint.serial
-                        last_seen = $TimeParsed
-                    })
+
+                    try {
+                        [void]$duplicatedEndpoints.Add($currentEndpointObject)
+                    } catch {
+                        Write-Host "[ERROR] Failed add duplicate for MAC $macKey : $_"
+                    }
 
                     Write-Host "[INFO] Found older duplicate for MAC $macKey"
                 }
             }
             else {
-                # Add new MAC entry
-                $endpointsToCheck[$macKey] = @{
-                    id        = $currentEndpoint.id
-                    name      = $currentEndpoint.name
-                    mac       = $currentEndpoint.mac
-                    serial    = $currentEndpoint.serial
-                    last_seen = $TimeParsed
-                }
-
+                $endpointsToCheck[$macKey] = $currentEndpointObject
                 Write-Host "[INFO] Added new endpoint for MAC $macKey"
             }
+
         }
         catch {
             Write-Host "[ERROR] Failed processing Endpoint: $($currentEndpoint.Id).  Error: $($_.Exception.Message)" -ForegroundColor Red
