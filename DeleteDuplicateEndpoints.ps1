@@ -181,7 +181,7 @@ if ($duplicatedEndpoints.Count -ge 1){
         switch ($userInput.ToLower()) {
             'a' {
                 $applyToAll = $true
-                Write-Host "[INFO] 'Yes to All' selected. All remaining endpoints will be deleted." -ForegroundColor Cyan
+                Write-Host "[INFO] 'Yes to All' selected. This one and all remaining endpoints will be deleted." -ForegroundColor Cyan
                 $null = $endpointsToDelete.Add($endpoint)
                 Write-Host "[INFO] Marked endpoint ID $endpointId for deletion" -ForegroundColor Yellow
             }
