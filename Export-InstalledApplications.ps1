@@ -190,14 +190,14 @@ function Write-CsvRow {
     }
 }
 
+# endpoint processing progress bar
 $totalEndpointsToProcessCount = $endpointsToProcess.Count
+$processingEndpointIndex = 0
 
 if ($totalEndpointsToProcessCount -lt 1){
-    Write-Warning "There are no Endpoints to process for Organization: $($Org) with GroupName(s) filter: $($GroupNames -join ', ')"
+    Write-Warning "There are no Endpoints to process in organization: $($Org) with GroupName(s) filter: $($GroupNames -join ', ')"
     exit 1
 }
-
-$processingEndpointIndex = 0
 
 foreach ($endpoint in $endpointsToProcess) {
 
