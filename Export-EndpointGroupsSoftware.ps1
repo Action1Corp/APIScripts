@@ -57,7 +57,7 @@ param(
     [string[]]$GroupNames
 )
 
-#Install-Module -Name PSAction1 -Force
+Install-Module -Name PSAction1 -Force
 Set-Action1Credentials -APIKey $ApiKey -Secret $Secret
 Set-Action1Region -Region $Region
 
@@ -83,8 +83,8 @@ if (-not $endpointGroups) {
 }
 
 $validGroupNames = New-Object "System.Collections.Hashtable" ([StringComparer]::Ordinal)
-foreach ($g in $endpointGroups) {
-    $validGroupNames[$g.name] = $g.id
+foreach ($endpointGroup in $endpointGroups) {
+    $validGroupNames[$endpointGroup.name] = $endpointGroup.id
 }
 
 
@@ -123,19 +123,19 @@ catch {
 
 if ($filterByGroups) {
 
-    $endpointsToProcess = foreach ($ep in $endpoints) {
+    $endpointsToProcess = foreach ($endpoint in $endpoints) {
 
         $match = $false
 
-        foreach ($g in $ep.group_membership) {
-            if ($allowedGroupIds.ContainsKey($g.id)) {
+        foreach ($endpointGroup in $endpoint.group_membership) {
+            if ($allowedGroupIds.ContainsKey($endpointGroup.id)) {
                 $match = $true
                 break
             }
         }
 
         if ($match) {
-            $ep
+            $endpoint
         }
     }
 }
@@ -163,17 +163,17 @@ function Write-CsvRow {
 }
 
 
-$total = $endpointsToProcess.Count
-$i = 0
+$totalEndpointsToProcess = $endpointsToProcess.Count
+$endpointCounter = 0
 
 foreach ($endpoint in $endpointsToProcess) {
 
-    $i++
+    $endpointCounter++
 
     Write-Progress `
         -Activity "Exporting endpoint software..." `
-        -Status "$i / $total ($($endpoint.name))" `
-        -PercentComplete (($i / $total) * 100)
+        -Status "$endpointCounter / $totalEndpointsToProcess ($($endpoint.name))" `
+        -PercentComplete (($endpointCounter / $totalEndpointsToProcess) * 100)
 
     try {
         $groups = $endpoint.group_membership
