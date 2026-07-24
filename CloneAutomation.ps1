@@ -16,8 +16,8 @@
 # Comment out below import/set-action1credentials if not needed, or preformed prior
 Install-Module -Name PSAction1
 Set-Action1Credentials -APIKey '<Insert API Key Here>' -Secret '<Insert Secret Here>'
+Set-Action1Region -Region '<Enter Region Here>' 
 Set-Action1DefaultOrg -Org_ID '<Insert Org_ID here>'
-Set-Action1Region -Region '<Enter Region Here>'
 
 # Step 1: Select Source Organization for Cloning
 $orgData = Get-Action1 Organizations
