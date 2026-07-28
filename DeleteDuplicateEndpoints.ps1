@@ -13,5 +13,20 @@
 # Review and test before production deployment
 # © Action1 Corporation
 
-# Comment out below import/set-action1credentials if not needed, or preformed prior
-Install-Module -Name PSAction1 -Force
+<#
+DEPRECATION NOTICE
+
+DeleteDuplicateEndpoints.ps1 is deprecated.
+
+Use the Remove-Action1DuplicateEndpoints cmdlet from the PSAction1 PowerShell
+module instead:
+https://github.com/Action1Corp/PSAction1/blob/main/Public/Endpoints/Remove-Action1DuplicateEndpoints.ps1
+
+Install or update PSAction1 from PowerShell Gallery:
+https://www.powershellgallery.com/packages/PSAction1
+
+Installation and usage instructions:
+https://github.com/Action1Corp/PSAction1/blob/main/README.md
+#>
+
+
